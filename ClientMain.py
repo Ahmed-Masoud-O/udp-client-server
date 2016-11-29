@@ -3,8 +3,8 @@ import sys
 
 client = Client('127.0.0.1', 8080)
 
-while(1):
-    msg = raw_input('Enter message to send : ')
+while 1:
+    msg = raw_input('Enter file name to request : ')
 
     try:
         client.clientSocket.sendto(msg, (client.host, client.port))
