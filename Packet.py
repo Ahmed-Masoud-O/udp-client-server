@@ -1,3 +1,7 @@
+import sys
+
+
+
 class Packet:
     ckSum = None
     length = None
@@ -8,3 +12,7 @@ class Packet:
         self.length = length
         self.seqNo = seqNo
         self.data = data
+
+
+
+
