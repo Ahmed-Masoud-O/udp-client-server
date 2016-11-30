@@ -5,21 +5,26 @@ import cPickle as pickle
 
 server = Server('127.0.0.1', '8888')
 totalSize = 0
+seqNo = 0
 
-def toggleSeqNo(seqNo):
+def toggleSeqNo():
+    global seqNo
     if seqNo == 0:
         seqNo = 1
     else:
         seqNo = 0
     return seqNo
 
-def createPackets(chunk,seqNo):
+
+def createPackets(chunk):
     global totalSize
+    global seqNo
     size = sys.getsizeof(chunk) + sys.getsizeof(seqNo)
     packet = Packet(size, seqNo, chunk)
-    toggleSeqNo(seqNo)
+    toggleSeqNo()
     totalSize += size
     return packet
+
 
 def openAndChunkFile(fileName):
     chunks = []
@@ -49,13 +54,13 @@ def waitForAck(seqNo):
 
 def handleRequest(fileName):
     global totalSize
+    global seqNo
     totalSize = 0
     dataChunks = openAndChunkFile(fileName)
     finalPackets = []
-    seqNo = 0
+
     for chunk in dataChunks:
-        finalPackets.append(createPackets(chunk, seqNo))
-        toggleSeqNo(seqNo)
+        finalPackets.append(createPackets(chunk))
     server.serverSocket.sendto(str(totalSize), addr)
     for packet in finalPackets:
         data_string = pickle.dumps(packet, -1)
@@ -64,7 +69,7 @@ def handleRequest(fileName):
         while ackResponse:
             print "waiting for Ack\n"
             ackResponse = waitForAck(packet.seqNo)
-        print "Ack Recieved"
+        print "Ack Recieved seq : " + str(packet.seqNo)
 
 
 while 1:
