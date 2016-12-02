@@ -5,7 +5,7 @@ import cPickle as pickle
 import time
 from random import randrange
 from threading import Thread
-import socket  as s
+import socket as s
 
 server = Server('127.0.0.1', '8888')
 totalSize = 0
@@ -61,7 +61,7 @@ def waitForAck(seqNo, data_string, addr, socket):
         return 1
 
 
-def handleRequest(fileName):
+def handleRequest(fileName,addr):
     global totalSize
     global seqNo
     totalSize = 0
@@ -104,8 +104,7 @@ while 1:
         except:
             pass
 
-    fileName = msg[0]
-    addr = msg[1]
+    fileName, addr = msg
 
     if not fileName:
         break
@@ -114,4 +113,4 @@ while 1:
 
     server.serverSocket.sendto(reply, addr)
     print 'Message[' + addr[0] + ':' + str(addr[1]) + '] - ' + fileName.strip()
-    Thread(target=handleRequest, args=[fileName]).start()
+    Thread(target=handleRequest, args=[fileName,addr]).start()

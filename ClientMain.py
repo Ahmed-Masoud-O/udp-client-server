@@ -1,10 +1,11 @@
+import server
 from Client import Client
 from Packet import Packet
 from Ack import Ack
 import cPickle as pickle
 import sys
-
-client = Client('127.0.0.1', 8888)
+from random import randrange
+client = Client('127.0.0.1', randrange(3000,4000))
 recievedSize = 0
 expectedSeqNo = 0
 lastSeqNo = 1
@@ -49,12 +50,10 @@ while 1:
     msg = raw_input('Enter file name to request : ')
 
     try:
-        client.clientSocket.sendto(msg, (client.host, client.port))
+        client.clientSocket.sendto(msg, ('127.0.0.1', 8888))
 
         # receive data from client (data, addr)
-        msg = client.clientSocket.recvfrom(1024)
-        reply = msg[0]
-        addr = msg[1]
+        reply, addr = client.clientSocket.recvfrom(1024)
 
         print 'Server reply : ' + reply
 
