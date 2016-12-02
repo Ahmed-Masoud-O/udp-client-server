@@ -11,8 +11,9 @@ class Server:
     def initializeServerSocket(self):
         try:
             self.serverSocket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+            self.serverSocket.settimeout(1)
             print 'Socket created'
-        except socket.error, msg :
+        except socket.error, msg:
             print 'Failed to create socket. Error Code : ' + str(msg[0]) + ' Message ' + msg[1]
             sys.exit()
 

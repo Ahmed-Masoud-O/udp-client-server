@@ -1,11 +1,15 @@
-from Server import Server
+from server import Server
 from Packet import Packet
 import sys
 import cPickle as pickle
+import time
+import socket
+from random import randrange
 
 server = Server('127.0.0.1', '8888')
 totalSize = 0
 seqNo = 0
+
 
 def toggleSeqNo():
     global seqNo
@@ -42,8 +46,12 @@ def openAndChunkFile(fileName):
     return chunks
 
 
-def waitForAck(seqNo):
-    msg = server.serverSocket.recvfrom(1024)
+def waitForAck(seqNo, data_string, addr):
+    try:
+        msg = server.serverSocket.recvfrom(1024)
+    except socket.timeout:
+        server.serverSocket.sendto(data_string, addr)
+        return 0
     serialized_data = msg[0]
     Ack = pickle.loads(serialized_data)
     if Ack.ackNumber == seqNo:
@@ -61,15 +69,24 @@ def handleRequest(fileName):
 
     for chunk in dataChunks:
         finalPackets.append(createPackets(chunk))
+
     server.serverSocket.sendto(str(totalSize), addr)
+
     for packet in finalPackets:
+        packet_received_probability = 90
+
         data_string = pickle.dumps(packet, -1)
-        server.serverSocket.sendto(data_string, addr)
-        ackResponse = waitForAck(packet.seqNo)
+
+        if randrange(0, 100) < 90:
+            server.serverSocket.sendto(data_string, addr)
+
+        ackResponse = waitForAck(packet.seqNo, data_string, addr)
+
         while ackResponse:
             print "waiting for Ack\n"
-            ackResponse = waitForAck(packet.seqNo)
-        print "Ack Recieved seq : " + str(packet.seqNo)
+            ackResponse = waitForAck(packet.seqNo, data_string, addr)
+
+        print "Ack Received seq : " + str(packet.seqNo)
 
 
 while 1:
@@ -85,5 +102,3 @@ while 1:
     server.serverSocket.sendto(reply, addr)
     print 'Message[' + addr[0] + ':' + str(addr[1]) + '] - ' + fileName.strip()
     handleRequest(fileName)
-
-

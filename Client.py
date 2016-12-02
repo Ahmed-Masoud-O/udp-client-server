@@ -1,6 +1,7 @@
 import socket
 import sys
 
+
 class Client:
     host = None
     server = None

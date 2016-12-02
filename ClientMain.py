@@ -19,6 +19,7 @@ def toggleSeqNo():
 
 
 def recieveFile():
+
     global recievedSize
     global expectedSeqNo
     global lastSeqNo
