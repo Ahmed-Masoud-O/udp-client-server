@@ -5,8 +5,9 @@ import cPickle as pickle
 import time
 import socket
 from random import randrange
+from threading import Thread
 
-server = Server('127.0.0.1', '8888')
+server = Server('127.0.0.1', 9000)
 totalSize = 0
 seqNo = 0
 
@@ -66,11 +67,12 @@ def handleRequest(fileName):
     totalSize = 0
     dataChunks = openAndChunkFile(fileName)
     finalPackets = []
+    server2 = Server('127.0.0.1',randrange(4000, 20000))
 
     for chunk in dataChunks:
         finalPackets.append(createPackets(chunk))
 
-    server.serverSocket.sendto(str(totalSize), addr)
+    server2.serverSocket.sendto(str(totalSize), addr)
 
     start = time.time()
     for packet in finalPackets:
@@ -79,7 +81,7 @@ def handleRequest(fileName):
         data_string = pickle.dumps(packet, -1)
 
         if randrange(0, 100) < receiving_probability:
-            server.serverSocket.sendto(data_string, addr)
+            server2.serverSocket.sendto(data_string, addr)
 
         ackResponse = waitForAck(packet.seqNo, data_string, addr)
 
@@ -112,4 +114,4 @@ while 1:
 
     server.serverSocket.sendto(reply, addr)
     print 'Message[' + addr[0] + ':' + str(addr[1]) + '] - ' + fileName.strip()
-    handleRequest(fileName)
+    Thread(target=handleRequest, args=fileName)

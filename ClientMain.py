@@ -4,7 +4,7 @@ from Ack import Ack
 import cPickle as pickle
 import sys
 
-client = Client('127.0.0.1', 8888)
+client = Client('bibo', 9000)
 recievedSize = 0
 expectedSeqNo = 0
 lastSeqNo = 1
@@ -25,6 +25,7 @@ def recieveFile():
     global lastSeqNo
     msg = client.clientSocket.recvfrom(1024)
     totalSize = msg[0]
+    addr = msg[1]
     text_file = open("response.jpg", "w+")
     data_string = None
     while totalSize != str(recievedSize):
@@ -32,13 +33,13 @@ def recieveFile():
         serialized_data = msg[0]
         packet = pickle.loads(serialized_data)
         if packet.seqNo == lastSeqNo:
-            client.clientSocket.sendto(data_string, (client.host, client.port))
+            client.clientSocket.sendto(data_string, addr)
             continue
         print(packet.data + str(packet.seqNo) + "\n")
         text_file.write(packet.data)
         ack = Ack(sys.getsizeof(expectedSeqNo), expectedSeqNo)
         data_string = pickle.dumps(ack, -1)
-        client.clientSocket.sendto(data_string, (client.host, client.port))
+        client.clientSocket.sendto(data_string, addr)
         recievedSize += packet.length
         lastSeqNo = expectedSeqNo
         toggleSeqNo()
