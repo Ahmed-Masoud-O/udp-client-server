@@ -72,12 +72,13 @@ def handleRequest(fileName):
 
     server.serverSocket.sendto(str(totalSize), addr)
 
+    start = time.time()
     for packet in finalPackets:
-        packet_received_probability = 90
+        receiving_probability = 95
 
         data_string = pickle.dumps(packet, -1)
 
-        if randrange(0, 100) < 90:
+        if randrange(0, 100) < receiving_probability:
             server.serverSocket.sendto(data_string, addr)
 
         ackResponse = waitForAck(packet.seqNo, data_string, addr)
@@ -88,9 +89,19 @@ def handleRequest(fileName):
 
         print "Ack Received seq : " + str(packet.seqNo)
 
+    print "sent file in ", (time.time() - start), " seconds. "
+
 
 while 1:
-    msg = server.serverSocket.recvfrom(1024)
+
+    msg = None
+    # keep receiving and ignore timeout by waiting
+    while not msg:
+        try:
+            msg = server.serverSocket.recvfrom(1024)
+        except:
+            pass
+
     fileName = msg[0]
     addr = msg[1]
 
