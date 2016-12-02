@@ -3,8 +3,8 @@ from Packet import Packet
 import sys
 import cPickle as pickle
 import time
-import socket
 from random import randrange
+from threading import Thread
 
 server = Server('127.0.0.1', '8888')
 totalSize = 0
@@ -46,11 +46,11 @@ def openAndChunkFile(fileName):
     return chunks
 
 
-def waitForAck(seqNo, data_string, addr):
+def waitForAck(seqNo, data_string, addr, socket):
     try:
-        msg = server.serverSocket.recvfrom(1024)
+        msg = socket.recvfrom(1024)
     except socket.timeout:
-        server.serverSocket.sendto(data_string, addr)
+        socket.sendto(data_string, addr)
         return 0
     serialized_data = msg[0]
     Ack = pickle.loads(serialized_data)
@@ -66,26 +66,27 @@ def handleRequest(fileName):
     totalSize = 0
     dataChunks = openAndChunkFile(fileName)
     finalPackets = []
+    sending_server = Server('127.0.0.1', randrange(3000, 4000))
 
     for chunk in dataChunks:
         finalPackets.append(createPackets(chunk))
 
-    server.serverSocket.sendto(str(totalSize), addr)
+    sending_server.serverSocket.sendto(str(totalSize), addr)
 
     start = time.time()
     for packet in finalPackets:
-        receiving_probability = 95
+        receiving_probability = 100
 
         data_string = pickle.dumps(packet, -1)
 
         if randrange(0, 100) < receiving_probability:
-            server.serverSocket.sendto(data_string, addr)
+            sending_server.serverSocket.sendto(data_string, addr)
 
-        ackResponse = waitForAck(packet.seqNo, data_string, addr)
+        ackResponse = waitForAck(packet.seqNo, data_string, addr, sending_server.serverSocket)
 
         while ackResponse:
             print "waiting for Ack\n"
-            ackResponse = waitForAck(packet.seqNo, data_string, addr)
+            ackResponse = waitForAck(packet.seqNo, data_string, addr, sending_server.serverSocket)
 
         print "Ack Received seq : " + str(packet.seqNo)
 
@@ -112,4 +113,4 @@ while 1:
 
     server.serverSocket.sendto(reply, addr)
     print 'Message[' + addr[0] + ':' + str(addr[1]) + '] - ' + fileName.strip()
-    handleRequest(fileName)
+    Thread(target=handleRequest, args=[fileName]).start()

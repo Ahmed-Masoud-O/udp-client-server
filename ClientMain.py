@@ -19,12 +19,10 @@ def toggleSeqNo():
 
 
 def recieveFile():
-
     global recievedSize
     global expectedSeqNo
     global lastSeqNo
-    msg = client.clientSocket.recvfrom(1024)
-    totalSize = msg[0]
+    totalSize, addr = client.clientSocket.recvfrom(1024)
     text_file = open("response.jpg", "w+")
     data_string = None
     while totalSize != str(recievedSize):
@@ -32,19 +30,20 @@ def recieveFile():
         serialized_data = msg[0]
         packet = pickle.loads(serialized_data)
         if packet.seqNo == lastSeqNo:
-            client.clientSocket.sendto(data_string, (client.host, client.port))
+            client.clientSocket.sendto(data_string, addr)
             continue
         print(packet.data + str(packet.seqNo) + "\n")
         text_file.write(packet.data)
         ack = Ack(sys.getsizeof(expectedSeqNo), expectedSeqNo)
         data_string = pickle.dumps(ack, -1)
-        client.clientSocket.sendto(data_string, (client.host, client.port))
+        client.clientSocket.sendto(data_string, addr)
         recievedSize += packet.length
         lastSeqNo = expectedSeqNo
         toggleSeqNo()
     text_file.close()
     client.clientSocket.close()
     sys.exit()
+
 
 while 1:
     msg = raw_input('Enter file name to request : ')
