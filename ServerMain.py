@@ -5,6 +5,7 @@ import cPickle as pickle
 import time
 from random import randrange
 from threading import Thread
+import socket  as s
 
 server = Server('127.0.0.1', '8888')
 totalSize = 0
@@ -49,7 +50,7 @@ def openAndChunkFile(fileName):
 def waitForAck(seqNo, data_string, addr, socket):
     try:
         msg = socket.recvfrom(1024)
-    except socket.timeout:
+    except s.timeout:
         socket.sendto(data_string, addr)
         return 0
     serialized_data = msg[0]
@@ -75,7 +76,7 @@ def handleRequest(fileName):
 
     start = time.time()
     for packet in finalPackets:
-        receiving_probability = 100
+        receiving_probability = 95
 
         data_string = pickle.dumps(packet, -1)
 
