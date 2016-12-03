@@ -5,11 +5,23 @@ from Ack import Ack
 import cPickle as pickle
 import sys
 from random import randrange
+import hashlib
+
+
 client = Client('127.0.0.1', randrange(3000,4000))
 recievedSize = 0
 expectedSeqNo = 0
 lastSeqNo = 1
 
+
+def generateCheckSum(packet):
+    packetContents = packet.data + str(packet.length) + str(packet.seqNo)
+    return hashlib.md5(packetContents).hexdigest()
+
+
+def generateAckCheckSum(ack):
+    ackContents = str(ack.ackNumber) + str(ack.length)
+    return hashlib.md5(ackContents).hexdigest()
 
 def toggleSeqNo():
     global expectedSeqNo
@@ -30,12 +42,13 @@ def recieveFile():
         msg = client.clientSocket.recvfrom(1024)
         serialized_data = msg[0]
         packet = pickle.loads(serialized_data)
-        if packet.seqNo == lastSeqNo:
+        if packet.seqNo == lastSeqNo or packet.ckSum != generateCheckSum(packet):
             client.clientSocket.sendto(data_string, addr)
             continue
         print(packet.data + str(packet.seqNo) + "\n")
         text_file.write(packet.data)
         ack = Ack(sys.getsizeof(expectedSeqNo), expectedSeqNo)
+        ack.ckSum = generateAckCheckSum(ack)
         data_string = pickle.dumps(ack, -1)
         client.clientSocket.sendto(data_string, addr)
         recievedSize += packet.length

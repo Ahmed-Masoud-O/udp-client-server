@@ -6,10 +6,21 @@ import time
 from random import randrange
 from threading import Thread
 import socket as s
+import hashlib
+
 
 server = Server('127.0.0.1', '8888')
 totalSize = 0
 seqNo = 0
+
+def generateCheckSum(packet):
+    packetContents = packet.data + str(packet.length) + str(packet.seqNo)
+    return hashlib.md5(packetContents).hexdigest()
+
+
+def generateAckCheckSum(ack):
+    ackContents = str(ack.ackNumber) + str(ack.length)
+    return hashlib.md5(ackContents).hexdigest()
 
 
 def toggleSeqNo():
@@ -28,6 +39,8 @@ def createPackets(chunk):
     packet = Packet(size, seqNo, chunk)
     toggleSeqNo()
     totalSize += size
+    checkSum = generateCheckSum(packet)
+    packet.ckSum = checkSum
     return packet
 
 
@@ -55,7 +68,7 @@ def waitForAck(seqNo, data_string, addr, socket):
         return 0
     serialized_data = msg[0]
     Ack = pickle.loads(serialized_data)
-    if Ack.ackNumber == seqNo:
+    if Ack.ackNumber == seqNo and Ack.ckSum == generateAckCheckSum(Ack):
         return 0
     else:
         return 1
